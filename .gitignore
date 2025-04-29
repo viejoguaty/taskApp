@@ -1,0 +1,29 @@
+# Ignorar entorno virtual
+env/
+
+# Archivos Python compilados y cachés
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Archivos de entorno
+.env
+*.env
+.env.*
+
+# Logs
+*.log
+
+# Node.js / React (frontend)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# IDEs y sistemas
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+``

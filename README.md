@@ -1,7 +1,9 @@
 read me
 
 on root task app 
-- source backend/env/bin/activate
+python3 -m venv backend/env
+source backend/env/bin/activate
+pip install fastapi uvicorn pydantic sqlalchemy psycopg2-binary python-jose
 and after this
 -uvicorn backend.main:app --reload
 

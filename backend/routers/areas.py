@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
 from backend.models import Area
+from backend.schemas import AreaResponse
 import uuid
 
 router = APIRouter()

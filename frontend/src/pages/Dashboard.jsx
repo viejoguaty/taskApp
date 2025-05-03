@@ -1,5 +1,4 @@
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { 
@@ -15,12 +14,20 @@ import {
   TableHead, 
   TableRow, 
   Paper, 
-  Box 
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
 import api from "../services/api";
+import { logout } from "../features/auth/authSlice";
 import TaskFormModal from "../components/TaskFormModal";
 import CompleteTaskModal from "../components/CompleteTaskModal";
-
+import EditTaskModal from "../components/EditTaskModal";
+import TaskDetailsModal from "../components/TaskDetailsModal";
+import TaskImportModal from "../components/TaskImportModal";
+import AreaCreateModal from "../components/AreaCreateModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -29,6 +36,12 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
+  const [deletingTaskId, setDeletingTaskId] = useState(null);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [openAreaModal, setOpenAreaModal] = useState(false);
+
 
   const total = tasks.length;
   const pending = tasks.filter(t => t.status === "pending").length;
@@ -40,17 +53,26 @@ export default function Dashboard() {
     navigate("/");
   };
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await api.get("/tasks");
-        setTasks(response.data);
-      } catch (error) {
-        console.error("Failed to load tasks", error);
-      }
-    };
+  const fetchTasks = async () => {
+    try {
+      const response = await api.get("/tasks");
+      setTasks(response.data);
+    } catch (error) {
+      console.error("Failed to load tasks", error);
+    }
+  };
 
+   const fetchAreas = async () => {
+    try {
+      const response = await api.get("/areas");
+      setTasks(response.data);
+    } catch (error) {
+      console.error("Failed to load tasks", error);
+    }
+  };
+  useEffect(() => {
     fetchTasks();
+    fetchAreas();
   }, []);
 
   return (
@@ -84,8 +106,15 @@ export default function Dashboard() {
                 >
                   Create Task
                 </Button>
+                <Button onClick={() => setOpenAreaModal(true)}>
+                  Create Area
+                </Button>
               </>
-
+            )}
+            {role === "admin" && (
+              <Button onClick={() => navigate("/admin-stats")} sx={{ ml: 2 }}>
+                View Stats
+              </Button>
             )}
 
             <Button onClick={handleLogout} variant="contained" color="error">
@@ -101,6 +130,12 @@ export default function Dashboard() {
             Your Tasks
           </Typography>
 
+          <Box display="flex" gap={4} mt={2}>
+            <Typography variant="subtitle1">📋 Total: {total}</Typography>
+            <Typography variant="subtitle1" color="error">🔴 Pending: {pending}</Typography>
+            <Typography variant="subtitle1" color="success.main">🟢 Completed: {completed}</Typography>
+          </Box>
+
           <TableContainer component={Paper} sx={{ mt: 2 }}>
             <Table>
               <TableHead>
@@ -115,7 +150,7 @@ export default function Dashboard() {
               <TableBody>
                 {tasks.length > 0 ? (
                   tasks.map((task) => (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} onClick={() => setSelectedTaskDetails(task)} style={{ cursor: "pointer" }}>
                       <TableCell>{task.title}</TableCell>
                       <TableCell>{task.description}</TableCell>
                       <TableCell>{task.due_date}</TableCell>
@@ -128,6 +163,20 @@ export default function Dashboard() {
                             onClick={() => setSelectedTaskId(task.id)}
                           >
                             Complete
+                          </Button>
+                        )}
+                        {role === "admin" && (
+                          <Button size="small" onClick={() => setEditingTask(task)}>
+                            Edit
+                          </Button>
+                        )}
+                        {role === "admin" && (
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => setDeletingTaskId(task.id)}
+                          >
+                            Delete
                           </Button>
                         )}
                       </TableCell>
@@ -157,21 +206,79 @@ export default function Dashboard() {
           </TableContainer>
         </CardContent>
       </Card>
+      
       <CompleteTaskModal
         open={!!selectedTaskId}
         taskId={selectedTaskId}
         onClose={() => setSelectedTaskId(null)}
         onComplete={() => {
           setSelectedTaskId(null);
+          fetchTasks();
         }}
+        task
       />
+
       <TaskFormModal
         open={showModal}
         onClose={() => setShowModal(false)}
         onCreated={() => {
           setShowModal(false);
+          fetchTasks();
         }}
       />
+
+      {editingTask && (
+        <EditTaskModal
+          open={!!editingTask}
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onUpdated={() => {
+            setEditingTask(null);
+            fetchTasks();
+          }}
+        />
+      )}
+
+      <TaskDetailsModal
+        open={!!selectedTaskDetails}
+        task={selectedTaskDetails}
+        onRefresh={fetchTasks}
+        onClose={() => setSelectedTaskDetails(null)}
+      />
+
+      <Dialog open={!!deletingTaskId} onClose={() => setDeletingTaskId(null)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>Are you sure you want to delete this task?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeletingTaskId(null)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              try {
+                await api.delete(`/tasks/${deletingTaskId}`);
+                setDeletingTaskId(null);
+              } catch (err) {
+                console.error("Failed to delete task", err);
+              }
+            }}
+            variant="contained"
+            color="error"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    {role === "admin" && (
+      <>
+          <AreaCreateModal
+            open={openAreaModal}
+            onClose={() => setOpenAreaModal(false)}
+            onCreated={fetchAreas}
+          />
+          <Button onClick={() => setImportOpen(true)}>Import CSV</Button>
+          <TaskImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={fetchTasks} />
+        </>
+      )}
+
     </Container>
   );
 }

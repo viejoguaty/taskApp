@@ -1,85 +1,169 @@
-import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { loginSuccess } from "../features/auth/authSlice";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { jwtDecode } from "jwt-decode";
-import { 
-  Container, 
-  TextField, 
-  Button, 
-  Typography, 
-  Card, 
-  CardContent 
-} from "@mui/material";
+import React, { useContext, useEffect, useState } from 'react';
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import api from "../services/api";
+import { BrandingContext } from '../context/BrandingContext';
+import Register from "../pages/Register";
 
-export default function Login() {
+import {
+  Box,
+  CircularProgress,
+  TextField,
+  Button,
+  Typography,
+  Drawer,
+  Container
+} from '@mui/material';
+
+const Login = () => {
   const navigate = useNavigate();
+  const { slug } = useParams();
   const dispatch = useDispatch();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const { branding, setBranding } = useContext(BrandingContext);
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState(null);
+  const [allowRegister, setAllowRegister] = useState(false);
+  const [open, setOpen] = React.useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  /*useEffect(() => {
+    api.get("/config").then(res => {
+      setAllowRegister(res.data.allow_registration);
+    });
+  }, []);*/
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then((res) => {
+          const company = res.data.company;
+          setBranding({
+            companyColor: company.color,
+            companyName: company.name,
+            companyLogo: company.logo,
+            companyId: company.id
+          });
+          navigate('/dashboard');
+        })
+        .catch(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  /*useEffect(() => {
+    async function loadCompany() {
+      try {
+        const res = await api.get(`/companies/by-slug/${slug}`);
+        sessionStorage.setItem("company_id", res.data.id);
+        setCompany(res.data);
+        dispatch(setBranding(res.data)); // opcional si usas Redux
+      } catch (err) {
+        console.error("Company not found");
+        navigate("/404");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCompany();
+  }, [slug]); */
+
+  const toggleDrawer = (newOpen) => () => {
+    setOpen(newOpen);
+  };
+
+  const handleLogin = async () => {
     try {
-      const response = await axios.post("http://localhost:8000/api/users/login", 
-        new URLSearchParams({
-          username: email,
-          password: password,
-        }),
-        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-      );
-      const token = response.data.access_token;
-      const decoded = jwtDecode(token);
+      const res = await axios.post('/login', credentials);
+      localStorage.setItem('token', res.data.access_token);
 
-      dispatch(loginSuccess({ 
-        token: token, 
-        user: decoded.sub,    // email
-        role: decoded.role    // role (admin or employee)
-      }));
+      const me = await axios.get('/me', {
+        headers: { Authorization: `Bearer ${res.data.access_token}` }
+      });
 
-      navigate("/dashboard");
+      const company = me.data.company;
+      setBranding({
+        companyColor: company.color,
+        companyName: company.name,
+        companyLogo: company.logo,
+        companyId: company.id
+      });
+
+      navigate('/dashboard');
     } catch (err) {
-      setError("Invalid credentials");
+      alert('Error al iniciar sesión');
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Container maxWidth="sm" sx={{ mt: 10 }}>
-      <Card>
-        <CardContent>
-          <Typography variant="h5" component="div" gutterBottom>
-            Login
+
+    <Container maxWidth="sm" sx={{ height: '100vh' }} className="center-box">
+        <Box p={4} sx={{ bgcolor: '#cfe8fc'}}>
+          {!branding.companyLogo && (
+            <Box mb={2} textAlign="center">
+              <img 
+                src="https://images.ctfassets.net/0uuz8ydxyd9p/2W8B7bcLSPX9YaSwkfrhmv/eade3fc61520b8cee84cf8605dce3056/Temporal_Symbol_dark_1_2x.png" 
+                alt="Logo" 
+                style={{ maxHeight: '85px' }} />
+            </Box>
+          )}
+          <Typography variant="h5" gutterBottom textAlign="center">
+            Welcome back to {branding.companyName || 'TaskApp'}
           </Typography>
-          <form onSubmit={handleSubmit}>
-            <TextField
-              label="Email"
-              variant="outlined"
-              margin="normal"
-              fullWidth
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <TextField
-              label="Password"
-              type="password"
-              variant="outlined"
-              margin="normal"
-              fullWidth
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            {error && <Typography color="error" variant="body2">{error}</Typography>}
-            <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-              Log in
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <TextField
+            label="Email"
+            fullWidth
+            margin="normal"
+            value={credentials.username}
+            onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+          />
+          <TextField
+            label="Password"
+            fullWidth
+            type="password"
+            margin="normal"
+            value={credentials.password}
+            onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+          />
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{ mt: 2, backgroundColor: branding.companyColor }}
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
+
+          {!allowRegister && (
+            <>
+              <Button 
+                onClick={toggleDrawer("right", true)} 
+                textAlign="center"
+                sx={{ minWidth: "100%", mt:2}}
+              >
+                  Register
+                </Button>
+              <Drawer open={open} onClose={toggleDrawer(false)}>
+                <Register setOpen={setOpen}/>
+              </Drawer>
+            </>
+          )}
+        </Box>
     </Container>
   );
-}
+};
+
+export default Login;

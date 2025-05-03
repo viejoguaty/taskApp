@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Date, Enum, ForeignKey
+from sqlalchemy import Column, String, Date, Enum, ForeignKey, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 import uuid
 from .database import Base
 import enum
@@ -15,6 +16,11 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.employee)
+    company_id = Column(String, ForeignKey("companies.id"))
+    company = relationship("Company", backref="users")
+    first_name = Column(String)
+    last_name = Column(String)
+    slug = Column(String, unique=True, index=True)
 
 class Area(Base):
     __tablename__ = "areas"
@@ -22,6 +28,8 @@ class Area(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, unique=True, nullable=False)
     description = Column(String, nullable=True)
+    company_id = Column(String, ForeignKey("companies.id"))
+    company = relationship("Company")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -36,3 +44,19 @@ class Task(Base):
     created_at = Column(Date)
     image_path = Column(String, nullable=True)
     completed_at = Column(Date, nullable=True)
+    comment = Column(Text, nullable=True)
+    allow_comments = Column(Boolean, default=False)
+    company_id = Column(String, ForeignKey("companies.id"))
+    company = relationship("Company")
+
+class Company(Base):
+    __tablename__ = "companies"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    color = Column(String, default="#2196f3")  # Primary color (Material UI)
+    logo_url = Column(String, nullable=True)  # Link to logo image
+    slug = Column(String, unique=True)
+
+
+

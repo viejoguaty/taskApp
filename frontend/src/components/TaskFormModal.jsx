@@ -28,6 +28,10 @@ export default function TaskFormModal({ open, onClose, onCreated }) {
   }, [open]);
 
   const handleSubmit = async () => {
+    if (!title || !description || !dueDate || !areaId || !assignedTo) {
+      alert("All fields are required");
+      return;
+    }
     try {
       await api.post("/tasks", {
         title,

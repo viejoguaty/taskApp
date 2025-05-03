@@ -4,3 +4,10 @@ body {
   font-family: $font-main;
   background-color: #f5f5f5;
 }
+
+.center-box {
+  display: flex;
+  align-content: center;
+  flex-direction: column;
+  justify-content: center;
+}

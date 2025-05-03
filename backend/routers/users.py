@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -6,8 +6,13 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from backend.database import SessionLocal
 from backend.models import User, UserRole
-from backend.routers.auth import get_current_user
+from backend.schemas import UserResponse
+from backend.routers.auth import get_current_user, get_password_hash
 import uuid
+import csv
+from io import StringIO
+from uuid import uuid4
+
 
 router = APIRouter()
 
@@ -39,7 +44,7 @@ def get_db():
         db.close()
 
 # Agrega este endpoint
-@router.get("/", response_model=list[dict])
+@router.get("/", response_model=list[UserResponse])
 def list_users(db: Session = Depends(get_db), user=Depends(get_current_user)):
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can list users")

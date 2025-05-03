@@ -1,5 +1,6 @@
 import axios from "axios";
 import { store } from "../app/store";
+import { logout } from "../features/auth/authSlice";
 
 const api = axios.create({
   baseURL: "http://localhost:8000/api",
@@ -13,5 +14,17 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Detecta 401 por token expirado
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      store.dispatch(logout());
+      window.location.href = "/"; // redirige al login
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

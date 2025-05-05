@@ -16,7 +16,7 @@ import {
   Container
 } from '@mui/material';
 
-const Login = () => {
+export default function Login() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const dispatch = useDispatch();
@@ -31,7 +31,7 @@ const Login = () => {
     api.get("/config").then(res => {
       setAllowRegister(res.data.allow_registration);
     });
-  }, []);*/
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -55,7 +55,7 @@ const Login = () => {
     }
   }, []);
 
-  /*useEffect(() => {
+  useEffect(() => {
     async function loadCompany() {
       try {
         const res = await api.get(`/companies/by-slug/${slug}`);
@@ -100,7 +100,7 @@ const Login = () => {
     }
   };
 
-  if (loading) {
+  if (!loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
@@ -165,5 +165,3 @@ const Login = () => {
     </Container>
   );
 };
-
-export default Login;

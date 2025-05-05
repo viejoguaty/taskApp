@@ -51,4 +51,4 @@ export default function Register({ setOpen }) {
       </div>
     </Container>
   );
-}
+};

@@ -18,21 +18,30 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon
 } from "@mui/material";
+
+import SaveIcon from '@mui/icons-material/Save';
+
 import api from "../services/api";
-import { logout } from "../features/auth/authSlice";
 import TaskFormModal from "../components/TaskFormModal";
 import CompleteTaskModal from "../components/CompleteTaskModal";
 import EditTaskModal from "../components/EditTaskModal";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import TaskImportModal from "../components/TaskImportModal";
+import UserImportModal from "../components/UserImportModal";
 import AreaCreateModal from "../components/AreaCreateModal";
+import AppBarSingle from "../components/AppBarSingle";
+import BottomNavigationSimple from "../components/BottomNavigationSimple";
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, role } = useSelector((state) => state.auth);
+  // const { user, role } = useSelector((state) => state.auth);
   const [showModal, setShowModal] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -40,18 +49,17 @@ export default function Dashboard() {
   const [deletingTaskId, setDeletingTaskId] = useState(null);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [importUserOpen, setImportUserOpen] = useState(false);
   const [openAreaModal, setOpenAreaModal] = useState(false);
+
+  //Temporal
+  const role = "admin";
+  const user = "";
 
 
   const total = tasks.length;
   const pending = tasks.filter(t => t.status === "pending").length;
   const completed = tasks.filter(t => t.status === "completed").length;
-
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/");
-  };
 
   const fetchTasks = async () => {
     try {
@@ -76,8 +84,9 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 10 }}>
-      <Card sx={{ mb: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 8 }}>
+    <AppBarSingle />
+      <Card>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <div>
@@ -98,17 +107,6 @@ export default function Dashboard() {
               >
                 Manage Users
               </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  sx={{ ml: 2 }}
-                  onClick={() => setShowModal(true)}
-                >
-                  Create Task
-                </Button>
-                <Button onClick={() => setOpenAreaModal(true)}>
-                  Create Area
-                </Button>
               </>
             )}
             {role === "admin" && (
@@ -116,10 +114,6 @@ export default function Dashboard() {
                 View Stats
               </Button>
             )}
-
-            <Button onClick={handleLogout} variant="contained" color="error">
-              Logout
-            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -267,18 +261,59 @@ export default function Dashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-    {role === "admin" && (
-      <>
-          <AreaCreateModal
-            open={openAreaModal}
-            onClose={() => setOpenAreaModal(false)}
-            onCreated={fetchAreas}
-          />
-          <Button onClick={() => setImportOpen(true)}>Import CSV</Button>
-          <TaskImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={fetchTasks} />
-        </>
-      )}
+      {role === "admin" && (
+        <>
+            <AreaCreateModal
+              open={openAreaModal}
+              onClose={() => setOpenAreaModal(false)}
+              onCreated={fetchAreas}
+            />
+            <TaskImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={fetchTasks} />
 
+            <UserImportModal open={importUserOpen} onClose={() => setImportUserOpen(false)} onImported={fetchTasks} />
+            
+            <Box sx={{ height: 320, transform: 'translateZ(0px)', flexGrow: 1 }}>
+              <SpeedDial
+                ariaLabel="SpeedDial basic example"
+                sx={{ position: 'absolute', bottom: 16, right: 16 }}
+                icon={<SpeedDialIcon />}
+              >
+                <SpeedDialAction
+                  key="CreateTask"
+                  icon={<SaveIcon />}
+                  tooltipTitle="Create Task"
+                  onClick={() => setShowModal(true)}
+                />
+
+                <SpeedDialAction
+                  key="CreateArea"
+                  icon={<SaveIcon />}
+                  tooltipTitle="Create Area"
+                  onClick={() => setOpenAreaModal(true)}
+                />
+
+                <SpeedDialAction
+                  key="ImportCSV"
+                  icon={<SaveIcon />}
+                  tooltipTitle="Import CSV"
+                  onClick={() => setImportOpen(true)}
+                />
+
+                <SpeedDialAction
+                  key="ImportUsers"
+                  icon={<SaveIcon />}
+                  tooltipTitle="Import Users"
+                  onClick={() => setImportUserOpen(true)}
+                />
+
+                
+              </SpeedDial>
+            </Box>
+          </>
+
+        )}
+
+      <BottomNavigationSimple />
     </Container>
   );
 }

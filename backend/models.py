@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Date, Enum, ForeignKey, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import relationship
 import uuid
 from .database import Base
@@ -42,12 +42,13 @@ class Task(Base):
     status = Column(String, default="pending")
     assigned_to = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(Date)
-    image_path = Column(String, nullable=True)
     completed_at = Column(Date, nullable=True)
-    comment = Column(Text, nullable=True)
     allow_comments = Column(Boolean, default=False)
     company_id = Column(String, ForeignKey("companies.id"))
     company = relationship("Company")
+    comments = Column(ARRAY(String), default=[])
+    before_images = Column(ARRAY(String), default=[])
+    after_images = Column(ARRAY(String), default=[])
 
 class Company(Base):
     __tablename__ = "companies"
